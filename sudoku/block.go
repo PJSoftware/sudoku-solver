@@ -2,16 +2,15 @@ package sudoku
 
 // Block is the subset of a grid. A block is 3x3 Cells.
 // Each Cell of a Block must contain a unique Value
-type Block struct {
-	block [3][3]Cell
+type block struct {
+	blk [3][3]cell
 }
 
-// NewBlock returns a new, empty block
-func NewBlock() *Block {
-	b := new(Block)
+func newBlock() *block {
+	b := new(block)
 	for x := 0; x <= 2; x++ {
 		for y := 0; y <= 2; y++ {
-			b.block[x][y] = *NewCell()
+			b.blk[x][y] = *newCell()
 		}
 	}
 	return b

@@ -12,7 +12,7 @@ import (
 // In addition to each Block containing 1 of each possible Values,
 // each row and column in a Block must contain 1 of each Value.
 type Grid struct {
-	grid [3][3]Block
+	grid [3][3]block
 }
 
 // NewGrid returns a new, empty grid
@@ -20,7 +20,7 @@ func NewGrid() *Grid {
 	g := new(Grid)
 	for x := 0; x <= 2; x++ {
 		for y := 0; y <= 2; y++ {
-			g.grid[x][y] = *NewBlock()
+			g.grid[x][y] = *newBlock()
 		}
 	}
 	return g
@@ -45,7 +45,7 @@ func (g *Grid) Import(fileName string) error {
 				if rv == '*' {
 					break
 				}
-				g.SetValue(row, col, Value(rv))
+				g.SetValue(row, col, value(rv))
 			}
 		}
 	}
@@ -54,16 +54,14 @@ func (g *Grid) Import(fileName string) error {
 
 // SetValue sets the value of the specified cell. This includes
 // recalculating all valid possible values appropriately
-func (g *Grid) SetValue(row, col int, v Value) {
-	c := g.Cell(row, col)
-	c.SetValue(v)
+func (g *Grid) SetValue(row, col int, v value) {
+	c := g.cell(row, col)
+	c.setValue(v)
 }
 
 // Block takes a row and col (in the range 1 to 9) and returns
 // a pointer to the correct Block.
-//
-// Possibly should not be visible outside this package?
-func (g *Grid) Block(row, col int) *Block {
+func (g *Grid) block(row, col int) *block {
 	gR, _, err1 := convertCoord(row)
 	gC, _, err2 := convertCoord(col)
 	if err1 == nil && err2 == nil {
@@ -76,11 +74,11 @@ func (g *Grid) Block(row, col int) *Block {
 
 // Cell takes a row and col (in the range 1 to 9) and returns
 // a pointer to the correct Cell
-func (g *Grid) Cell(row, col int) *Cell {
+func (g *Grid) cell(row, col int) *cell {
 	gR, bR, err1 := convertCoord(row)
 	gC, bC, err2 := convertCoord(col)
 	if err1 == nil && err2 == nil {
-		c := g.grid[gR][gC].block[bR][bC]
+		c := g.grid[gR][gC].blk[bR][bC]
 		return &c
 	}
 	log.Fatalf("Coordinates (%d, %d) not valid", row, col)
