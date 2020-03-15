@@ -2,8 +2,6 @@ package sudoku
 
 import (
 	"bufio"
-	"fmt"
-	"log"
 	"os"
 	"regexp"
 )
@@ -55,46 +53,23 @@ func (g *Grid) Import(fileName string) error {
 // SetValue sets the value of the specified cell. This includes
 // recalculating all valid possible values appropriately
 func (g *Grid) SetValue(row, col int, v value) {
-	c := g.cell(row, col)
+	coord := newCoord(row, col)
+	b := g.block(*coord)
+	b.updatePossibility(*coord, v)
+	c := g.cell(*coord)
 	c.setValue(v)
 }
 
 // Block takes a row and col (in the range 1 to 9) and returns
 // a pointer to the correct Block.
-func (g *Grid) block(row, col int) *block {
-	gR, _, err1 := convertCoord(row)
-	gC, _, err2 := convertCoord(col)
-	if err1 == nil && err2 == nil {
-		b := g.grid[gR][gC]
-		return &b
-	}
-	log.Fatalf("Coordinates (%d, %d) not valid", row, col)
-	return nil
+func (g *Grid) block(rc coord) *block {
+	b := g.grid[rc.gR][rc.gC]
+	return &b
 }
 
 // Cell takes a row and col (in the range 1 to 9) and returns
 // a pointer to the correct Cell
-func (g *Grid) cell(row, col int) *cell {
-	gR, bR, err1 := convertCoord(row)
-	gC, bC, err2 := convertCoord(col)
-	if err1 == nil && err2 == nil {
-		c := g.grid[gR][gC].blk[bR][bC]
-		return &c
-	}
-	log.Fatalf("Coordinates (%d, %d) not valid", row, col)
-	return nil
-}
-
-// convertCoord converts a coordinate in the range 1 to 9,
-// into a GridCoord, BlockCoord combo (each in the range 0-2)
-func convertCoord(coord int) (int, int, error) {
-	var cache = [9][2]int{
-		{0, 0}, {0, 1}, {0, 2},
-		{1, 0}, {1, 1}, {1, 2},
-		{2, 0}, {2, 1}, {2, 2},
-	}
-	if coord >= 1 && coord <= 9 {
-		return cache[coord-1][0], cache[coord-1][0], nil
-	}
-	return -1, -1, fmt.Errorf("coord %d out of expected bounds (1-9)", coord)
+func (g *Grid) cell(rc coord) *cell {
+	c := g.grid[rc.gR][rc.gC].blk[rc.bR][rc.bC]
+	return &c
 }

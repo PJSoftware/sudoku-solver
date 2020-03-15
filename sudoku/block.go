@@ -15,3 +15,13 @@ func newBlock() *block {
 	}
 	return b
 }
+
+func (b *block) updatePossibility(rc coord, v value) {
+	for r := 0; r <= 2; r++ {
+		for c := 0; c <= 2; c++ {
+			if !(r == rc.bR && c == rc.bC) {
+				b.blk[r][c].possible[v] = false
+			}
+		}
+	}
+}
