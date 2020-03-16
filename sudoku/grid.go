@@ -13,9 +13,9 @@ const gridSize int = 9
 type collIdx int
 
 const (
-	collRow collIdx = 0
-	collCol collIdx = 1
-	collBlk collIdx = 2
+	collRow collIdx = iota
+	collCol
+	collBlk
 )
 
 // gridCoord allows us to use the following code:
