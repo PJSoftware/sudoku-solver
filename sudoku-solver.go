@@ -1,6 +1,10 @@
 package main
 
-import "./sudoku"
+import (
+	"fmt"
+
+	"./sudoku"
+)
 
 // 1. Initialise grid
 // 2. Solve grid
@@ -10,6 +14,9 @@ const defaultPuzzleFile string = "puzzles/easy.sp"
 
 func main() {
 	grid := sudoku.NewGrid()
-	grid.Import(defaultPuzzleFile)
+	err := grid.Import(defaultPuzzleFile)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
 	grid.Display()
 }

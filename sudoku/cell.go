@@ -2,27 +2,35 @@ package sudoku
 
 // Cell is a single square containing values
 type cell struct {
-	val         value
-	possible    map[value]bool
-	parentBlock *block
+	val      value
+	possible map[value]bool
 }
 
-type cellRow [9]cell
-type cellCol [9]cell
+type cellCollection [gridSize]*cell
 
-func newCell(b *block) *cell {
+func (cc cellCollection) notPossible(v value) {
+	for i := 0; i < gridSize; i++ {
+		cc[i].possible[v] = false
+	}
+}
+
+func newCell(g *Grid) *cell {
 	c := new(cell)
-	c.parentBlock = b
 	c.val = empty
-	c.parentBlock.parentGrid.emptyCells++
+	g.emptyCells++
 	c.possible = make(map[value]bool)
 	c.setAllPossible(true)
 	return c
 }
 
-func (c *cell) setValue(v value) {
+func (c *cell) canSet(v value) bool {
+	return c.possible[v]
+}
+
+func (c *cell) setValue(v value) bool {
 	c.val = v
 	c.setAllPossible(false)
+	return true
 }
 
 func (c *cell) setAllPossible(isPossible bool) {

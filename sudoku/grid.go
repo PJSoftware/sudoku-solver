@@ -2,29 +2,61 @@ package sudoku
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 )
 
-// Grid is the entire game board, made of 3x3 Blocks.
-// In addition to each Block containing 1 of each possible Values,
-// each row and column in a Block must contain 1 of each Value.
+const gridSize int = 9
+
+type collIdx int
+
+const (
+	collRow collIdx = 0
+	collCol collIdx = 1
+	collBlk collIdx = 2
+)
+
+// gridCoord allows us to use the following code:
+//  for ri, rn := range gridCoord
+// this allows us to use ri for a zero-based value (0 to 8)
+// or rn for a 1-based value (1 to 9) as required.
+//
+// I actually started using 1 to 9, but then halfway through switched
+// to 0 to 8. At this point, unsure which I need, but this seemed
+// a neet way to allow either until I'm sure we don't need rn/cn
+var gridCoord = [gridSize]int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+// Grid is the entire game board
 type Grid struct {
-	grid       [3][3]block
+	grid       [gridSize][gridSize]*cell
+	collection [3][gridSize]cellCollection
 	emptyCells int
-	rows       [9]cellRow
-	cols       [9]cellCol
 }
 
 // NewGrid returns a new, empty grid
 func NewGrid() *Grid {
 	g := new(Grid)
-	for x := 0; x <= 2; x++ {
-		for y := 0; y <= 2; y++ {
-			g.grid[x][y] = *newBlock(g)
+	for ri := range gridCoord {
+		for ci := range gridCoord {
+			c := newCell(g)
+			g.grid[ri][ci] = c
+			bi := calcBlkIdx(ri, ci)
+			for vi := val1 - 1; vi < val9; vi++ {
+				g.collection[collRow][ri][vi] = c
+				g.collection[collCol][ci][vi] = c
+				g.collection[collBlk][bi][vi] = c
+			}
 		}
 	}
 	return g
+}
+
+func calcBlkIdx(ri, ci int) int {
+	r := ri / 3
+	c := ci / 3
+	return c*3 + r
 }
 
 // Import from specified .sp file
@@ -36,18 +68,23 @@ func (g *Grid) Import(fileName string) error {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	row := 1
+	ri := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		if ok, _ := regexp.MatchString(`^[*1-9]{9}$`, line); ok {
 			r := []rune(line)
-			for col := 1; col <= 9; col++ {
-				rv := r[col-1]
+			for ci := range gridCoord {
+				rv := r[ci]
 				if rv == '*' {
-					break
+					continue
 				}
-				g.SetValue(row, col, value(rv))
+				vi, _ := strconv.Atoi(string(rv))
+				err := g.SetValue(ri, ci, value(vi))
+				if err != nil {
+					return err
+				}
 			}
+			ri++
 		}
 	}
 	return nil
@@ -55,24 +92,26 @@ func (g *Grid) Import(fileName string) error {
 
 // SetValue sets the value of the specified cell. This includes
 // recalculating all valid possible values appropriately
-func (g *Grid) SetValue(row, col int, v value) {
-	coord := newCoord(row, col)
-	b := g.block(*coord)
-	b.updatePossibility(*coord, v)
-	c := g.cell(*coord)
-	c.setValue(v)
+func (g *Grid) SetValue(ri, ci int, v value) error {
+	fmt.Printf("Setting (%d,%d) to %d\n", ri, ci, v)
+	c := g.grid[ri][ci]
+	if c.canSet(v) {
+		c.setValue(v)
+		bi := calcBlkIdx(ri, ci)
+		g.collection[collRow][ri].notPossible(v)
+		g.collection[collCol][ci].notPossible(v)
+		g.collection[collBlk][bi].notPossible(v)
+		return nil
+	}
+	return fmt.Errorf("cannot set cell (%d,%d) to %d", ri, ci, v)
 }
 
-// Block takes a row and col (in the range 1 to 9) and returns
-// a pointer to the correct Block.
-func (g *Grid) block(rc coord) *block {
-	b := g.grid[rc.gR][rc.gC]
-	return &b
-}
-
-// Cell takes a row and col (in the range 1 to 9) and returns
-// a pointer to the correct Cell
-func (g *Grid) cell(rc coord) *cell {
-	c := g.grid[rc.gR][rc.gC].blk[rc.bR][rc.bC]
-	return &c
+// Display handles the grid output
+func (g *Grid) Display() {
+	for ri := range gridCoord {
+		for ci := range gridCoord {
+			fmt.Printf("[ %s ]", g.grid[ri][ci].val) // Stringify to return " " for empty
+		}
+		fmt.Println()
+	}
 }
