@@ -11,4 +11,5 @@ const defaultPuzzleFile string = "puzzles/easy.sp"
 func main() {
 	grid := sudoku.NewGrid()
 	grid.Import(defaultPuzzleFile)
+	grid.Display()
 }

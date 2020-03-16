@@ -10,7 +10,10 @@ import (
 // In addition to each Block containing 1 of each possible Values,
 // each row and column in a Block must contain 1 of each Value.
 type Grid struct {
-	grid [3][3]block
+	grid       [3][3]block
+	emptyCells int
+	rows       [9]cellRow
+	cols       [9]cellCol
 }
 
 // NewGrid returns a new, empty grid
@@ -18,7 +21,7 @@ func NewGrid() *Grid {
 	g := new(Grid)
 	for x := 0; x <= 2; x++ {
 		for y := 0; y <= 2; y++ {
-			g.grid[x][y] = *newBlock()
+			g.grid[x][y] = *newBlock(g)
 		}
 	}
 	return g
