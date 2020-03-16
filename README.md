@@ -22,7 +22,9 @@ At this stage I'm considering a simple ASCII grid of numbers and spaces; simple,
 
 ### Modelling the Puzzle
 
-My first thought is to model the puzzle as a 3x3 Grid of 3x3 Blocks. This gives us the block-solver easily enough, but possibly complicates the row/column code, so I may yet change this to a plain 9x9 Grid.
+My first thought was to model the puzzle as a 3x3 Grid of 3x3 Blocks. However, while this potentially simplified validation of any of the Blocks, it did not help (and possibly even complicated) row and column validation.
+
+Once I realised that row, column, and block could all be handled the same way--as a collection of 9 cells, which could be set once at grid creation and then simply referred to as required--I ditched the 3x3(x3x3) nesting, and changed to a plain 9x9 grid.
 
 ### Solving the Puzzle
 
