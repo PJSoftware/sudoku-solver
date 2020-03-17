@@ -19,4 +19,7 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 	}
 	grid.Display()
+
+	grid.Solve()
+	grid.Display()
 }
