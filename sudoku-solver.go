@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"./sudoku"
@@ -10,16 +11,21 @@ import (
 // 2. Solve grid
 // 3. Display solution
 
-const defaultPuzzleFile string = "puzzles/easy.sp"
-
 func main() {
+	puzzle := flag.String("puzzle", "easy", "enter name of predefined puzzle to solve (from puzzles folder)")
+	flag.Parse()
+
 	grid := sudoku.NewGrid()
-	err := grid.Import(defaultPuzzleFile)
+	puzzleFile := fmt.Sprintf("puzzles/%s.sp", *puzzle)
+	fmt.Printf("Solving '%s'\n", puzzleFile)
+
+	err := grid.Import(puzzleFile)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		return
 	}
-	grid.Display()
 
+	grid.Display()
 	grid.Solve()
 	grid.Display()
 }
