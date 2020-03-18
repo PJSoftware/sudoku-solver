@@ -19,6 +19,8 @@ const (
 	val9
 )
 
+var values = [gridSize]value{val1, val2, val3, val4, val5, val6, val7, val8, val9}
+
 // String converts a value to a string
 func (v value) String() string {
 	if v == empty {
