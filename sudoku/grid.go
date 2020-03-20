@@ -80,12 +80,19 @@ func (g *Grid) SetValue(ri, ci int, v value) error {
 // Display handles the grid output
 func (g *Grid) Display() {
 	for ri := range gridCoord {
-		for ci := range gridCoord {
-			c := g.cells[ri][ci]
-			fmt.Printf("[ %s ]", c.val) // Stringify to return " " for empty
+		if ri%3 == 0 {
+			drawHoriz()
 		}
-		fmt.Println()
+		for ci := range gridCoord {
+			if ci%3 == 0 {
+				drawVert()
+			}
+			c := g.cells[ri][ci]
+			fmt.Printf(" %s ", c.val) // Stringify to return " " for empty
+		}
+		drawEndofRow()
 	}
+	drawHoriz()
 }
 
 // Solve the grid
@@ -120,4 +127,17 @@ func (g *Grid) solveFirstPass() int {
 		}
 	}
 	return nowEmpty - g.emptyCells
+}
+
+func drawHoriz() {
+	fmt.Println("+---------+---------+---------+")
+}
+
+func drawVert() {
+	fmt.Print("|")
+}
+
+func drawEndofRow() {
+	drawVert()
+	fmt.Println()
 }
