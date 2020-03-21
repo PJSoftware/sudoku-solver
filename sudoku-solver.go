@@ -13,9 +13,12 @@ import (
 
 func main() {
 	puzzle := flag.String("puzzle", "easy", "enter name of predefined puzzle to solve (from puzzles folder)")
+	working := flag.Bool("working", false, "show working while solving puzzle")
 	flag.Parse()
 
 	grid := sudoku.NewGrid()
+	grid.ShowWorking(*working)
+
 	puzzleFile := fmt.Sprintf("puzzles/%s.sp", *puzzle)
 	fmt.Printf("Solving '%s'\n", puzzleFile)
 

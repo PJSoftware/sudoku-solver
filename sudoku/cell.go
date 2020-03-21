@@ -5,11 +5,13 @@ type cell struct {
 	val        value
 	possible   [gridSize]bool
 	ri, ci, bi int
+	opv        value // only possible value
 }
 
 func newCell(ri, ci int) *cell {
 	c := new(cell)
 	c.val = empty
+	c.opv = empty
 	bi := calcBlkIdx(ri, ci)
 	c.ri = ri
 	c.ci = ci
@@ -46,12 +48,23 @@ func (c *cell) setValue(v value) bool {
 }
 
 // pCount returns number of possible values for cell
-func (c *cell) pCount() int {
+// if only one possible value, return it too
+func (c *cell) pCount() (int, value) {
+	if c.opv != empty {
+		return 1, c.opv
+	}
+
 	pc := 0
-	for vi := range values {
+	opv := empty
+	for vi, p := range values {
 		if c.possible[vi] {
+			opv = p
 			pc++
 		}
 	}
-	return pc
+	if pc != 1 {
+		opv = empty
+	}
+	c.opv = opv
+	return pc, opv
 }

@@ -10,6 +10,13 @@ import (
 
 const gridSize int = 9
 
+type gridDisplay int
+
+const (
+	showValues gridDisplay = iota
+	showPCount
+)
+
 // gridCoord allows us to use the following code:
 //  for ri, rn := range gridCoord
 // this allows us to use ri for a zero-based value (0 to 8)
@@ -18,8 +25,9 @@ var gridCoord = [gridSize]int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // Grid is the entire game board
 type Grid struct {
-	cells      [gridSize][gridSize]*cell
-	emptyCells int
+	cells       [gridSize][gridSize]*cell
+	emptyCells  int
+	showWorking bool
 }
 
 // NewGrid returns a new, empty grid
@@ -33,6 +41,11 @@ func NewGrid() *Grid {
 		}
 	}
 	return g
+}
+
+// ShowWorking sets whether the solver should explain its thinking
+func (g *Grid) ShowWorking(sw bool) {
+	g.showWorking = sw
 }
 
 // Import from specified .sp file
@@ -78,7 +91,12 @@ func (g *Grid) SetValue(ri, ci int, v value) error {
 }
 
 // Display handles the grid output
-func (g *Grid) Display() {
+func (g *Grid) Display(displayType ...gridDisplay) {
+	dt := showValues
+	if len(displayType) > 0 {
+		dt = displayType[0]
+	}
+
 	for ri := range gridCoord {
 		if ri%3 == 0 {
 			drawHoriz()
@@ -88,7 +106,17 @@ func (g *Grid) Display() {
 				drawVert()
 			}
 			c := g.cells[ri][ci]
-			fmt.Printf(" %s ", c.val) // Stringify to return " " for empty
+			switch dt {
+			case showValues:
+				fmt.Printf(" %s ", c.val)
+			case showPCount:
+				pc, opv := c.pCount()
+				if pc == 1 {
+					fmt.Printf("<%s>", opv)
+				} else {
+					fmt.Printf(" %d ", pc)
+				}
+			}
 		}
 		drawEndofRow()
 	}
@@ -98,9 +126,15 @@ func (g *Grid) Display() {
 // Solve the grid
 func (g *Grid) Solve() {
 	pass := 1
+
+	if g.showWorking {
+		g.Display(showPCount)
+		displayCollections()
+	}
+
 	for g.emptyCells > 0 {
 		fmt.Printf("Solver running; pass %d: ", pass)
-		numSolved := g.solveFirstPass()
+		numSolved := g.solveUseOPV()
 		fmt.Printf("%d cells solved\n", numSolved)
 		if numSolved == 0 {
 			fmt.Printf("Solver is stuck with %d empty cells remaining\n", g.emptyCells)
@@ -110,23 +144,26 @@ func (g *Grid) Solve() {
 	}
 }
 
-func (g *Grid) solveFirstPass() int {
+func (g *Grid) solveUseOPV() int {
 	nowEmpty := g.emptyCells
 	for ri := range gridCoord {
 		for ci := range gridCoord {
 			c := g.cells[ri][ci]
-			if c.pCount() == 1 {
-				for vi, p := range c.possible {
-					val := values[vi]
-					if p {
-						c.setValue(val)
-						g.emptyCells--
-					}
-				}
+			pc, opv := c.pCount()
+			if pc == 1 {
+				g.working(fmt.Sprintf("Cell (%d,%d) set to OPV: %s", ri, ci, opv))
+				c.setValue(opv)
+				g.emptyCells--
 			}
 		}
 	}
 	return nowEmpty - g.emptyCells
+}
+
+func (g *Grid) working(msg string) {
+	if g.showWorking {
+		fmt.Printf("  %s\n", msg)
+	}
 }
 
 func drawHoriz() {
