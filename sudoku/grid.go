@@ -3,6 +3,7 @@ package sudoku
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -25,8 +26,7 @@ var gridCoord = [gridSize]int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // Grid is the entire game board
 type Grid struct {
-	cells       [gridSize][gridSize]*cell
-	emptyCells  int
+	cell        [gridSize][gridSize]*cell
 	showWorking bool
 }
 
@@ -36,11 +36,14 @@ func NewGrid() *Grid {
 	for ri := range gridCoord {
 		for ci := range gridCoord {
 			c := newCell(ri, ci)
-			g.cells[ri][ci] = c
-			g.emptyCells++
+			g.cell[ri][ci] = c
 		}
 	}
 	return g
+}
+
+func (g *Grid) returnCell(ri, ci int) *cell {
+	return g.cell[ri][ci]
 }
 
 // ShowWorking sets whether the solver should explain its thinking
@@ -67,9 +70,15 @@ func (g *Grid) Import(fileName string) error {
 				if rv == '*' {
 					continue
 				}
-				vi, _ := strconv.Atoi(string(rv))
-				err := g.SetValue(ri, ci, value(vi))
+				vr, err := strconv.Atoi(string(rv))
 				if err != nil {
+					return fmt.Errorf("Error converting '%s' to value: %v", string(rv), err)
+				}
+				c := g.returnCell(ri, ci)
+				err = c.setValue(value(vr))
+				if err == nil {
+					c.status = cellOriginal
+				} else {
 					return err
 				}
 			}
@@ -77,17 +86,6 @@ func (g *Grid) Import(fileName string) error {
 		}
 	}
 	return nil
-}
-
-// SetValue sets the value of the specified cell. This includes
-// recalculating all valid possible values appropriately
-func (g *Grid) SetValue(ri, ci int, v value) error {
-	c := g.cells[ri][ci]
-	if c.setValue(v) {
-		g.emptyCells--
-		return nil
-	}
-	return fmt.Errorf("cannot set cell (%d,%d) to %d", ri, ci, v)
 }
 
 // Display handles the grid output
@@ -105,10 +103,22 @@ func (g *Grid) Display(displayType ...gridDisplay) {
 			if ci%3 == 0 {
 				drawVert()
 			}
-			c := g.cells[ri][ci]
+			c := g.returnCell(ri, ci)
 			switch dt {
 			case showValues:
-				fmt.Printf(" %s ", c.val)
+				if g.showWorking {
+					switch c.status {
+					case cellNew:
+						fmt.Printf("<%s>", c.val)
+						c.status = cellSolved
+					case cellSolved:
+						fmt.Printf("-%s-", c.val)
+					default:
+						fmt.Printf(" %s ", c.val)
+					}
+				} else {
+					fmt.Printf(" %s ", c.val)
+				}
 			case showPCount:
 				pc, opv := c.pCount()
 				if pc == 1 {
@@ -123,6 +133,16 @@ func (g *Grid) Display(displayType ...gridDisplay) {
 	drawHoriz()
 }
 
+type solver struct {
+	name   string
+	solver func(*Grid) (int, error)
+}
+
+var solvers = []solver{
+	solver{"OnlyPossibleValue", (*Grid).solveUseOPV},
+	solver{"OPVByBlock", (*Grid).solveOPVbyBlock},
+}
+
 // Solve the grid
 func (g *Grid) Solve() {
 	pass := 1
@@ -132,32 +152,86 @@ func (g *Grid) Solve() {
 		displayCollections()
 	}
 
-	for g.emptyCells > 0 {
-		fmt.Printf("Solver running; pass %d: ", pass)
-		numSolved := g.solveUseOPV()
-		fmt.Printf("%d cells solved\n", numSolved)
+	for g.emptyCells() > 0 {
+		fmt.Printf("Cells remaining: %d; Solver running; pass %d:\n", g.emptyCells(), pass)
+		numSolved := 0
+		for _, sv := range solvers {
+			g.working(fmt.Sprintf("Running '%s' solver:", sv.name))
+			ns, err := sv.solver(g)
+			if err != nil {
+				log.Fatalf("Error in %s: %v", sv.name, err)
+			} else {
+				numSolved += ns
+			}
+		}
+		if g.showWorking {
+			g.Display()
+		}
+		fmt.Printf("Pass %d: %d cells solved\n", pass, numSolved)
 		if numSolved == 0 {
-			fmt.Printf("Solver is stuck with %d empty cells remaining\n", g.emptyCells)
+			fmt.Printf("Solver is stuck with %d empty cells remaining\n", g.emptyCells())
 			return
 		}
 		pass++
 	}
 }
 
-func (g *Grid) solveUseOPV() int {
-	nowEmpty := g.emptyCells
+func (g *Grid) solveUseOPV() (int, error) {
+	nowEmpty := g.emptyCells()
 	for ri := range gridCoord {
 		for ci := range gridCoord {
-			c := g.cells[ri][ci]
+			c := g.returnCell(ri, ci)
 			pc, opv := c.pCount()
 			if pc == 1 {
-				g.working(fmt.Sprintf("Cell (%d,%d) set to OPV: %s", ri, ci, opv))
-				c.setValue(opv)
-				g.emptyCells--
+				g.working(fmt.Sprintf("  Cell (%d,%d) set to OPV: %s", ri, ci, opv))
+				err := c.setValue(opv)
+				if err != nil {
+					return 0, err
+				}
 			}
 		}
 	}
-	return nowEmpty - g.emptyCells
+	return nowEmpty - g.emptyCells(), nil
+}
+
+func (g *Grid) solveOPVbyBlock() (int, error) {
+	nowEmpty := g.emptyCells()
+	for bi := range gridCoord {
+		for vi, val := range values {
+			cc := blkColl[bi]
+			pc := 0
+			var cp *cell
+			for _, c := range cc {
+				if c.val != empty {
+					continue
+				}
+				if c.possible[vi] {
+					pc++
+					cp = c
+				}
+			}
+			if pc == 1 {
+				g.working(fmt.Sprintf("  Cell (%d, %d) set to %s by block examination", cp.ri, cp.ci, val))
+				err := cp.setValue(val)
+				if err != nil {
+					return 0, err
+				}
+			}
+		}
+	}
+	return nowEmpty - g.emptyCells(), nil
+}
+
+func (g *Grid) emptyCells() int {
+	ecc := 0
+	for ri := range gridCoord {
+		for ci := range gridCoord {
+			if g.cell[ri][ci].val == empty {
+				ecc++
+			}
+		}
+	}
+	return ecc
 }
 
 func (g *Grid) working(msg string) {

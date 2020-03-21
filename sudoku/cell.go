@@ -1,17 +1,30 @@
 package sudoku
 
+import "fmt"
+
+type cellStatus int
+
+const (
+	cellEmpty cellStatus = iota
+	cellOriginal
+	cellSolved
+	cellNew
+)
+
 // Cell is a single square containing values
 type cell struct {
 	val        value
 	possible   [gridSize]bool
 	ri, ci, bi int
 	opv        value // only possible value
+	status     cellStatus
 }
 
 func newCell(ri, ci int) *cell {
 	c := new(cell)
 	c.val = empty
 	c.opv = empty
+	c.status = cellEmpty
 	bi := calcBlkIdx(ri, ci)
 	c.ri = ri
 	c.ci = ci
@@ -28,23 +41,30 @@ func newCell(ri, ci int) *cell {
 	return c
 }
 
-func (c *cell) setValue(v value) bool {
-	vi := int(v - 1)
-	if c.possible[vi] {
-		c.val = v
-		for vi := range values {
-			c.possible[vi] = false
-		}
-
-		for i := 0; i < 9; i++ {
-			rowColl[c.ri][i].possible[vi] = false
-			colColl[c.ci][i].possible[vi] = false
-			blkColl[c.bi][i].possible[vi] = false
-		}
-		return true
+func (c *cell) setValue(v value) error {
+	if c.val != empty {
+		return fmt.Errorf("Cannot set Cell(%d,%d) to %s; cell already set to %s", c.ri, c.ci, v, c.val)
 	}
 
-	return false
+	vi := int(v - 1)
+	if !c.possible[vi] {
+		return fmt.Errorf("Cannot set Cell(%d,%d) to impossible value %s", c.ri, c.ci, v)
+	}
+
+	c.val = v
+	c.opv = empty
+	c.status = cellNew
+
+	for i := range gridCoord {
+		rowColl[c.ri][i].possible[vi] = false
+		colColl[c.ci][i].possible[vi] = false
+		blkColl[c.bi][i].possible[vi] = false
+	}
+
+	for vi := range values {
+		c.possible[vi] = false
+	}
+	return nil
 }
 
 // pCount returns number of possible values for cell
