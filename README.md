@@ -29,3 +29,17 @@ Once I realised that row, column, and block could all be handled the same way--a
 ### Solving the Puzzle
 
 I am taking the preliminary approach of scanning the grid every time a known value is entered, updating the "possible" values for each empty cell. For simple puzzles this may be enough, but more complex solution strategies will be added as I need them.
+
+## Solver Code
+
+### One Possible Value (OPV)
+
+This was my first thought: simply check which cells only have one possible value (based on the other cells in their row/col/block "neighbourhoods") and set them to that value. This actually worked for some easy puzzles.
+
+### OPV By Block
+
+Where the simple OPV approach failed, the next step was to examine the cells in each block, examining each possible value, and determining which can only be placed in one possible cell. For instance, a block may have four empty cells, and one cell may have possible values of "2", "3", "5" -- but after examining the other cells, none of them can take the "3" so it must logically belong in this cell.
+
+### Extend Possible Values
+
+If a block has only two or three empty cells, all in a row or column, it can be determined that the possible values which can be placed in that row or column will affect the neighbouring blocks' possible values. Identifying such cases may give us enough information to fill in another cell.
