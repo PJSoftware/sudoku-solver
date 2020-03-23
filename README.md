@@ -43,3 +43,7 @@ Where the simple OPV approach failed, the next step was to examine the cells in 
 ### Extend Possible Values
 
 If a block has only two or three empty cells, all in a row or column, it can be determined that the possible values which can be placed in that row or column will affect the neighbouring blocks' possible values. Identifying such cases may give us enough information to fill in another cell.
+
+### Eliminate Possibilites
+
+For each block that has only two or three empty cells, try out all possibilities and determine whether they make it impossible to fill the same value in a neighbouring cell. This should at least allow us to eliminate a possibility or two.
