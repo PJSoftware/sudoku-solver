@@ -34,9 +34,9 @@ func newCell(ri, ci int) *cell {
 		c.possible[vi] = true
 	}
 
-	rowColl[ri] = append(rowColl[ri], c)
-	colColl[ci] = append(colColl[ci], c)
-	blkColl[bi] = append(blkColl[bi], c)
+	gc.rowColl[ri] = append(gc.rowColl[ri], c)
+	gc.colColl[ci] = append(gc.colColl[ci], c)
+	gc.blkColl[bi] = append(gc.blkColl[bi], c)
 
 	return c
 }
@@ -56,9 +56,9 @@ func (c *cell) setValue(v value) error {
 	c.status = cellNew
 
 	for i := range gridCoord {
-		rowColl[c.ri][i].possible[vi] = false
-		colColl[c.ci][i].possible[vi] = false
-		blkColl[c.bi][i].possible[vi] = false
+		gc.rowColl[c.ri][i].possible[vi] = false
+		gc.colColl[c.ci][i].possible[vi] = false
+		gc.blkColl[c.bi][i].possible[vi] = false
 	}
 
 	for vi := range values {

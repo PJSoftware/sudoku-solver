@@ -7,14 +7,16 @@ import (
 
 type collection []*cell
 
-var rowColl [gridSize]collection
-var colColl [gridSize]collection
-var blkColl [gridSize]collection
+type gridCollections struct {
+	rowColl [gridSize]collection
+	colColl [gridSize]collection
+	blkColl [gridSize]collection
+}
 
-func displayCollections() {
-	displayColl("row", rowColl)
-	displayColl("column", colColl)
-	displayColl("block", blkColl)
+func (gc *gridCollections) displayCollections() {
+	displayColl("row", gc.rowColl)
+	displayColl("column", gc.colColl)
+	displayColl("block", gc.blkColl)
 }
 
 func displayColl(cName string, cArray [gridSize]collection) {

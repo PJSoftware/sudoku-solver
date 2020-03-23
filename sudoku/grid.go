@@ -29,9 +29,12 @@ type Grid struct {
 	showWorking bool
 }
 
+var gc *gridCollections
+
 // NewGrid returns a new, empty grid
 func NewGrid() *Grid {
 	g := new(Grid)
+	gc = new(gridCollections)
 	for ri := range gridCoord {
 		for ci := range gridCoord {
 			c := newCell(ri, ci)

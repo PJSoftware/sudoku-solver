@@ -17,12 +17,12 @@ var solvers = []solver{
 }
 
 // Solve the grid
-func (g *Grid) Solve() {
+func (g *Grid) Solve() int {
 	pass := 1
 
 	if g.showWorking {
 		g.Display(showPCount)
-		displayCollections()
+		gc.displayCollections()
 	}
 
 	for g.emptyCells() > 0 {
@@ -41,11 +41,13 @@ func (g *Grid) Solve() {
 			g.Display()
 		}
 		if numSolved == 0 {
-			fmt.Printf("Solver is stuck with %d empty cells remaining\n", g.emptyCells())
-			return
+			ec := g.emptyCells()
+			fmt.Printf("Solver is stuck with %d empty cells remaining\n", ec)
+			return ec
 		}
 		pass++
 	}
+	return 0
 }
 
 func (g *Grid) solveUseOPV() (int, error) {
@@ -70,7 +72,7 @@ func (g *Grid) solveOPVbyBlock() (int, error) {
 	nowEmpty := g.emptyCells()
 	for bi := range gridCoord {
 		for vi, val := range values {
-			cc := blkColl[bi]
+			cc := gc.blkColl[bi]
 			pc := 0
 			var cp *cell
 			for _, c := range cc {
@@ -97,19 +99,19 @@ func (g *Grid) solveOPVbyBlock() (int, error) {
 func (g *Grid) solveExtendPossVal() (int, error) {
 	ext := 0
 	for bi := range gridCoord {
-		ec := blkColl[bi].emptyCount()
+		ec := gc.blkColl[bi].emptyCount()
 		if ec >= 2 && ec <= 3 {
 			rows := make(map[int]bool)
 			cols := make(map[int]bool)
 			for i := range gridCoord {
-				c := blkColl[bi][i]
+				c := gc.blkColl[bi][i]
 				if c.val == empty {
 					rows[c.ri] = true
 					cols[c.ci] = true
 				}
 			}
 			if len(rows) == 1 || len(cols) == 1 {
-				unused := blkColl[bi].unusedValues()
+				unused := gc.blkColl[bi].unusedValues()
 
 				var cc collection
 				var fixed int
@@ -119,7 +121,7 @@ func (g *Grid) solveExtendPossVal() (int, error) {
 					for i := range rows {
 						fixed = i
 					}
-					cc = rowColl[fixed]
+					cc = gc.rowColl[fixed]
 					for i := range cols {
 						ignore[i] = true
 					}
@@ -127,7 +129,7 @@ func (g *Grid) solveExtendPossVal() (int, error) {
 					for i := range cols {
 						fixed = i
 					}
-					cc = colColl[fixed]
+					cc = gc.colColl[fixed]
 					for i := range rows {
 						ignore[i] = true
 					}
