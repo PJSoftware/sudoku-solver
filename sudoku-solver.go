@@ -57,10 +57,13 @@ func main() {
 			sl = append(sl, solution{p, npr, grid})
 		}
 
-		if np > 1 && ecc == 0 && !*working {
+		if ecc == 0 {
 			fmt.Println("Puzzle solved!")
 		} else {
 			fmt.Println("Unable to solve puzzle!")
+		}
+		if np == 1 && !*working {
+			grid.Display()
 		}
 		fmt.Println()
 	}
