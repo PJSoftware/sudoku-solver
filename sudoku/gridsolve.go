@@ -17,7 +17,7 @@ var solvers = []solver{
 }
 
 // Solve the grid
-func (g *Grid) Solve() int {
+func (g *Grid) Solve() (int, int) {
 	pass := 1
 
 	if g.showWorking {
@@ -43,11 +43,11 @@ func (g *Grid) Solve() int {
 		if numSolved == 0 {
 			ec := g.emptyCells()
 			fmt.Printf("Solver is stuck with %d empty cells remaining\n", ec)
-			return ec
+			return ec, pass
 		}
 		pass++
 	}
-	return 0
+	return 0, pass - 1
 }
 
 func (g *Grid) solveUseOPV() (int, error) {

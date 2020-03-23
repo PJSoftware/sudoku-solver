@@ -10,6 +10,12 @@ import (
 	"./sudoku"
 )
 
+type solution struct {
+	file   string
+	passes int
+	grid   *sudoku.Grid
+}
+
 func main() {
 	puzzle := flag.String("puzzle", "easy", "enter name of predefined puzzle to solve (from puzzles folder)")
 	working := flag.Bool("working", false, "show working while solving puzzle")
@@ -25,6 +31,8 @@ func main() {
 	}
 
 	solved := 0
+	var sl []solution
+
 	for _, p := range puzzles {
 		grid := sudoku.NewGrid()
 		grid.ShowWorking(*working)
@@ -41,19 +49,37 @@ func main() {
 			grid.Display()
 		}
 
-		ecc := grid.Solve()
+		ecc, npr := grid.Solve()
 		if ecc == 0 {
 			solved++
+			sl = append(sl, solution{p, npr, nil})
+		} else {
+			sl = append(sl, solution{p, npr, grid})
 		}
 
 		if np > 1 && ecc == 0 && !*working {
 			fmt.Println("Puzzle solved!")
 		} else {
-			grid.Display()
+			fmt.Println("Unable to solve puzzle!")
 		}
 		fmt.Println()
 	}
-	fmt.Printf("%d of %d puzzles solved!\n", solved, len(puzzles))
+
+	for _, sol := range sl {
+		if sol.grid == nil {
+			fmt.Printf("%s solved in %d passes\n", sol.file, sol.passes)
+		}
+	}
+	fmt.Printf("%d of %d puzzles solved!\n\n", solved, len(puzzles))
+
+	for _, sol := range sl {
+		if sol.grid != nil {
+			fmt.Printf("%s could not be solved (%d passes)\n", sol.file, sol.passes)
+			sol.grid.ShowWorking(false)
+			sol.grid.Display()
+			fmt.Println()
+		}
+	}
 }
 
 func puzzleList(all bool, puzzle string) []string {
@@ -81,7 +107,7 @@ func puzzleList(all bool, puzzle string) []string {
 }
 
 func puzzlePath(fn string) string {
-	pDir := "./puzzles"
+	pDir := "puzzles"
 	if fn == "" {
 		return pDir
 	}
