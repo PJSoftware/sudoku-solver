@@ -2,6 +2,17 @@ package sudoku
 
 import "fmt"
 
+type s3Solver struct {
+	rows   map[int]bool // determines rows used
+	cols   map[int]bool // determines columns used
+	ec     int          // empty cells in block
+	block  collection   // block we are working with
+	coll   collection   // collection to examine
+	unused []value      // values unused in this block
+	ignore map[int]bool // cells in collection to ignore
+	ext    int          // how many extensions were processed
+}
+
 // solveExtendPossVal (solver 3) examines blocks containing only 2 or 3
 // empty cells which are in a line (row or column); it considers whether
 // any of the possible values are disallowed because setting them would
@@ -9,71 +20,99 @@ import "fmt"
 // sets the Possible values of the cell appropriately. This does not
 // directly set the value of a cell, but may enable further progress.
 func (g *Grid) solveExtendPossVal() (int, error) {
-	ext := 0
+	s3 := new(s3Solver)
+
 	for bi := range gridCoord {
-		ec := g.cc.blkColl[bi].emptyCount()
-		if ec >= 2 && ec <= 3 {
-			rows := make(map[int]bool)
-			cols := make(map[int]bool)
-			for i := range gridCoord {
-				c := g.cc.blkColl[bi][i]
-				if c.val == empty {
-					rows[c.ri] = true
-					cols[c.ci] = true
-				}
-			}
-			if len(rows) == 1 || len(cols) == 1 {
-				unused := g.cc.blkColl[bi].unusedValues()
+		if s3.worthConsidering(g.cc.blkColl[bi]) {
+			s3.examineEmpty()
 
-				var cc collection
-				var fixed int
-				ignore := make(map[int]bool)
+			if s3.emptyInLine() {
+				s3.findUnusedValues()
+				s3.chooseCollection(g.cc)
 
-				if len(rows) == 1 {
-					for i := range rows {
-						fixed = i
-					}
-					cc = g.cc.rowColl[fixed]
-					for i := range cols {
-						ignore[i] = true
-					}
-				} else { // len(cols) == 1
-					for i := range cols {
-						fixed = i
-					}
-					cc = g.cc.colColl[fixed]
-					for i := range rows {
-						ignore[i] = true
-					}
-				}
-
-				for _, val := range unused {
-					for i := range gridCoord {
-						c := cc[i]
-						skip := false
-						if len(rows) == 1 {
-							if _, ok := ignore[c.ci]; ok {
-								skip = true
-							}
-						} else {
-							if _, ok := ignore[c.ri]; ok {
-								skip = true
-							}
-						}
-						if skip {
-							continue
-						}
-
-						vi := int(val) - 1
-						if c.val == empty && c.possible[vi] {
-							g.working(fmt.Sprintf("  Empty Cell(%d,%d), value %s set to not possible", c.ri, c.ci, val))
-							c.possible[vi] = false
-							ext++
-						}
+				for _, val := range s3.unused {
+					for _, c := range s3.coll {
+						s3.extendPossValue(c, val)
 					}
 				}
 			}
 		}
 	}
-	return ext, nil
+	return s3.ext, nil
+}
+
+func (s3 *s3Solver) worthConsidering(block collection) bool {
+	s3.block = block
+	s3.ec = block.emptyCount()
+	return s3.ec >= 2 && s3.ec <= 3
+}
+
+func (s3 *s3Solver) examineEmpty() {
+	s3.rows = make(map[int]bool)
+	s3.cols = make(map[int]bool)
+	for _, c := range s3.block {
+		if c.val == empty {
+			s3.rows[c.ri] = true
+			s3.cols[c.ci] = true
+		}
+	}
+}
+
+func (s3 *s3Solver) emptyInLine() bool {
+	return len(s3.rows) == 1 || len(s3.cols) == 1
+}
+
+func (s3 *s3Solver) findUnusedValues() {
+	s3.unused = s3.block.unusedValues()
+}
+
+func (s3 *s3Solver) isRow() bool {
+	return len(s3.cols) == 1
+}
+
+func (s3 *s3Solver) isCol() bool {
+	return len(s3.rows) == 1
+}
+
+func (s3 *s3Solver) chooseCollection(cc *cellCollections) {
+	var fixed int
+	s3.ignore = make(map[int]bool)
+
+	if s3.isCol() {
+		for i := range s3.rows {
+			fixed = i
+		}
+		s3.coll = cc.rowColl[fixed]
+		for ci := range s3.cols {
+			s3.ignore[ci] = true
+		}
+	} else { // s3.isRow()
+		for i := range s3.cols {
+			fixed = i
+		}
+		s3.coll = cc.colColl[fixed]
+		for ri := range s3.rows {
+			s3.ignore[ri] = true
+		}
+	}
+}
+
+func (s3 *s3Solver) extendPossValue(c *cell, val value) {
+	if s3.isCol() {
+		if _, ok := s3.ignore[c.ci]; ok {
+			return
+		}
+
+		if _, ok := s3.ignore[c.ri]; ok {
+			return
+		}
+	}
+
+	vi := int(val) - 1
+	if c.val == empty && c.possible[vi] {
+		c.parent.working(fmt.Sprintf("  Empty Cell(%d,%d), value %s set to not possible", c.ri, c.ci, val))
+		c.possible[vi] = false
+		s3.ext++
+	}
+
 }
