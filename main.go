@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"./sudoku"
+	"github.com/pjsoftware/sudoku-solver/sudoku"
 )
 
 type solution struct {
