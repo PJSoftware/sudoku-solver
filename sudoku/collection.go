@@ -7,13 +7,13 @@ import (
 
 type collection []*cell
 
-type gridCollections struct {
+type cellCollections struct {
 	rowColl [gridSize]collection
 	colColl [gridSize]collection
 	blkColl [gridSize]collection
 }
 
-func (gc *gridCollections) displayCollections() {
+func (gc *cellCollections) displayCollections() {
 	displayColl("row", gc.rowColl)
 	displayColl("column", gc.colColl)
 	displayColl("block", gc.blkColl)

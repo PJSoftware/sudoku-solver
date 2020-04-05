@@ -27,13 +27,13 @@ var gridCoord = [gridSize]int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 type Grid struct {
 	cell        [gridSize][gridSize]*cell
 	showWorking bool
-	gc          *gridCollections
+	cc          *cellCollections
 }
 
 // NewGrid returns a new, empty grid
 func NewGrid() *Grid {
 	g := new(Grid)
-	g.gc = new(gridCollections)
+	g.cc = new(cellCollections)
 	for ri := range gridCoord {
 		for ci := range gridCoord {
 			c := newCell(ri, ci, g)
