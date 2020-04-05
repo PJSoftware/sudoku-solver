@@ -2,6 +2,8 @@ package sudoku
 
 import "fmt"
 
+// solveUseOPV (solver 1) scans the grid for any cells with only one possible value
+// and then applies that value
 func (g *Grid) solveUseOPV() (int, error) {
 	nowEmpty := g.emptyCells()
 	for ri := range gridCoord {

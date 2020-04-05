@@ -2,6 +2,9 @@ package sudoku
 
 import "fmt"
 
+// solveOPVbyBlock (solver 2) examines each Block of the Grid; for each possible
+// value, it determines whether how many cells in the block can be set to that
+// value. If there is only one matching cell, it is set to that value.
 func (g *Grid) solveOPVbyBlock() (int, error) {
 	nowEmpty := g.emptyCells()
 	for bi := range gridCoord {

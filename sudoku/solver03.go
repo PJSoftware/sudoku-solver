@@ -2,6 +2,12 @@ package sudoku
 
 import "fmt"
 
+// solveExtendPossVal (solver 3) examines blocks containing only 2 or 3
+// empty cells which are in a line (row or column); it considers whether
+// any of the possible values are disallowed because setting them would
+// prevent all valid moves in neighbouring blocks. In such a case, it
+// sets the Possible values of the cell appropriately. This does not
+// directly set the value of a cell, but may enable further progress.
 func (g *Grid) solveExtendPossVal() (int, error) {
 	ext := 0
 	for bi := range gridCoord {
