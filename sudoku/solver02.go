@@ -9,7 +9,7 @@ func (g *Grid) solveOPVbyBlock() (int, error) {
 	nowEmpty := g.emptyCells()
 	for bi := range gridCoord {
 		for vi, val := range values {
-			cc := gc.blkColl[bi]
+			cc := g.gc.blkColl[bi]
 			pc := 0
 			var cp *cell
 			for _, c := range cc {

@@ -18,13 +18,15 @@ type cell struct {
 	ri, ci, bi int
 	opv        value // only possible value
 	status     cellStatus
+	parent     *Grid
 }
 
-func newCell(ri, ci int) *cell {
+func newCell(ri, ci int, g *Grid) *cell {
 	c := new(cell)
 	c.val = empty
 	c.opv = empty
 	c.status = cellEmpty
+	c.parent = g
 	bi := calcBlkIdx(ri, ci)
 	c.ri = ri
 	c.ci = ci
@@ -34,9 +36,9 @@ func newCell(ri, ci int) *cell {
 		c.possible[vi] = true
 	}
 
-	gc.rowColl[ri] = append(gc.rowColl[ri], c)
-	gc.colColl[ci] = append(gc.colColl[ci], c)
-	gc.blkColl[bi] = append(gc.blkColl[bi], c)
+	g.gc.rowColl[ri] = append(g.gc.rowColl[ri], c)
+	g.gc.colColl[ci] = append(g.gc.colColl[ci], c)
+	g.gc.blkColl[bi] = append(g.gc.blkColl[bi], c)
 
 	return c
 }
@@ -56,9 +58,9 @@ func (c *cell) setValue(v value) error {
 	c.status = cellNew
 
 	for i := range gridCoord {
-		gc.rowColl[c.ri][i].possible[vi] = false
-		gc.colColl[c.ci][i].possible[vi] = false
-		gc.blkColl[c.bi][i].possible[vi] = false
+		c.parent.gc.rowColl[c.ri][i].possible[vi] = false
+		c.parent.gc.colColl[c.ci][i].possible[vi] = false
+		c.parent.gc.blkColl[c.bi][i].possible[vi] = false
 	}
 
 	for vi := range values {

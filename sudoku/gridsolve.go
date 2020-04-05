@@ -22,7 +22,7 @@ func (g *Grid) Solve() (int, int) {
 
 	if g.showWorking {
 		g.Display(showPCount)
-		gc.displayCollections()
+		g.gc.displayCollections()
 	}
 
 	for g.emptyCells() > 0 {
