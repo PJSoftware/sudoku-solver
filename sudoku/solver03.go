@@ -11,6 +11,7 @@ type s3Solver struct {
 	unused []value      // values unused in this block
 	ignore map[int]bool // cells in collection to ignore
 	ext    int          // how many extensions were processed
+	parent *Grid        // link back to parent grid
 }
 
 // solveExtendPossVal (solver 3) examines blocks containing only 2 or 3
@@ -20,7 +21,11 @@ type s3Solver struct {
 // sets the Possible values of the cell appropriately. This does not
 // directly set the value of a cell, but may enable further progress.
 func (g *Grid) solveExtendPossVal() (int, error) {
+	if g.showWorking {
+		g.Display()
+	}
 	s3 := new(s3Solver)
+	s3.parent = g
 
 	for bi := range gridCoord {
 		if s3.worthConsidering(g.cc.blkColl[bi]) {
@@ -44,7 +49,9 @@ func (g *Grid) solveExtendPossVal() (int, error) {
 func (s3 *s3Solver) worthConsidering(block collection) bool {
 	s3.block = block
 	s3.ec = block.emptyCount()
-	return s3.ec >= 2 && s3.ec <= 3
+	wc := s3.ec >= 2 && s3.ec <= 3
+	s3.parent.working(fmt.Sprintf("emptyCount = %d, worthConsidering = %v", s3.ec, wc), 2)
+	return wc
 }
 
 func (s3 *s3Solver) examineEmpty() {
@@ -59,7 +66,9 @@ func (s3 *s3Solver) examineEmpty() {
 }
 
 func (s3 *s3Solver) emptyInLine() bool {
-	return len(s3.rows) == 1 || len(s3.cols) == 1
+	il := len(s3.rows) == 1 || len(s3.cols) == 1
+	s3.parent.working(fmt.Sprintf("  empty cells are in a line: %v", il), 2)
+	return il
 }
 
 func (s3 *s3Solver) findUnusedValues() {
@@ -102,7 +111,7 @@ func (s3 *s3Solver) extendPossValue(c *cell, val value) {
 		if _, ok := s3.ignore[c.ci]; ok {
 			return
 		}
-
+	} else {
 		if _, ok := s3.ignore[c.ri]; ok {
 			return
 		}
@@ -110,7 +119,7 @@ func (s3 *s3Solver) extendPossValue(c *cell, val value) {
 
 	vi := int(val) - 1
 	if c.val == empty && c.possible[vi] {
-		c.parent.working(fmt.Sprintf("  Empty Cell(%d,%d), value %s set to not possible", c.ri, c.ci, val))
+		c.parent.working(fmt.Sprintf("Empty Cell(%d,%d), value %s set to not possible", c.ri, c.ci, val), 1)
 		c.possible[vi] = false
 		s3.ext++
 	}

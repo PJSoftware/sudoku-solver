@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 const gridSize int = 9
@@ -146,9 +147,10 @@ func (g *Grid) emptyCells() int {
 	return ecc
 }
 
-func (g *Grid) working(msg string) {
+func (g *Grid) working(msg string, indent int) {
 	if g.showWorking {
-		fmt.Printf("  %s\n", msg)
+		is := strings.Repeat("  ", indent)
+		fmt.Printf("%s%s\n", is, msg)
 	}
 }
 

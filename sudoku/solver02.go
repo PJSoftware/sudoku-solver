@@ -22,7 +22,7 @@ func (g *Grid) solveOPVbyBlock() (int, error) {
 				}
 			}
 			if pc == 1 {
-				g.working(fmt.Sprintf("  Cell(%d, %d) set to %s by block examination", cp.ri, cp.ci, val))
+				g.working(fmt.Sprintf("Cell(%d, %d) set to %s by block examination", cp.ri, cp.ci, val), 1)
 				err := cp.setValue(val)
 				if err != nil {
 					return 0, err

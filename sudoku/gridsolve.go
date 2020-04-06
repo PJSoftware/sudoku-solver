@@ -29,7 +29,7 @@ func (g *Grid) Solve() (int, int) {
 		fmt.Printf("Cells remaining: %d; Solver running; pass %d:\n", g.emptyCells(), pass)
 		numSolved := 0
 		for _, sv := range solvers {
-			g.working(fmt.Sprintf("Running '%s' solver:", sv.name))
+			g.working(fmt.Sprintf("Running '%s' solver:", sv.name), 0)
 			ns, err := sv.solver(g)
 			if err != nil {
 				log.Fatalf("Error in %s: %v", sv.name, err)
