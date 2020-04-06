@@ -1,17 +1,22 @@
 package sudoku
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+const s3DEBUG bool = false
 
 type s3Solver struct {
-	rows   map[int]bool // determines rows used
-	cols   map[int]bool // determines columns used
-	ec     int          // empty cells in block
-	block  collection   // block we are working with
-	coll   collection   // collection to examine
-	unused []value      // values unused in this block
-	ignore map[int]bool // cells in collection to ignore
-	ext    int          // how many extensions were processed
-	parent *Grid        // link back to parent grid
+	rows        map[int]bool // determines rows used
+	cols        map[int]bool // determines columns used
+	ec          int          // empty cells in block
+	block       collection   // block we are working with
+	coll        collection   // collection to examine
+	unused      []value      // values unused in this block
+	ignore      map[int]bool // cells in collection to ignore
+	ext         int          // how many extensions were processed
+	showWorking bool         // Additional working info for s3
 }
 
 // solveExtendPossVal (solver 3) examines blocks containing only 2 or 3
@@ -21,11 +26,11 @@ type s3Solver struct {
 // sets the Possible values of the cell appropriately. This does not
 // directly set the value of a cell, but may enable further progress.
 func (g *Grid) solveExtendPossVal() (int, error) {
-	if g.showWorking {
+	s3 := new(s3Solver)
+	s3.showWorking = s3DEBUG
+	if s3.showWorking {
 		g.Display()
 	}
-	s3 := new(s3Solver)
-	s3.parent = g
 
 	for bi := range gridCoord {
 		if s3.worthConsidering(g.cc.blkColl[bi]) {
@@ -50,7 +55,7 @@ func (s3 *s3Solver) worthConsidering(block collection) bool {
 	s3.block = block
 	s3.ec = block.emptyCount()
 	wc := s3.ec >= 2 && s3.ec <= 3
-	s3.parent.working(fmt.Sprintf("emptyCount = %d, worthConsidering = %v", s3.ec, wc), 2)
+	s3.working(fmt.Sprintf("emptyCount = %d, worthConsidering = %v", s3.ec, wc), 1)
 	return wc
 }
 
@@ -67,12 +72,13 @@ func (s3 *s3Solver) examineEmpty() {
 
 func (s3 *s3Solver) emptyInLine() bool {
 	il := len(s3.rows) == 1 || len(s3.cols) == 1
-	s3.parent.working(fmt.Sprintf("  empty cells are in a line: %v", il), 2)
+	s3.working(fmt.Sprintf("empty cells are in a line: %v", il), 2)
 	return il
 }
 
 func (s3 *s3Solver) findUnusedValues() {
 	s3.unused = s3.block.unusedValues()
+	s3.working(fmt.Sprintf("Unused values: %v", s3.unused), 2)
 }
 
 func (s3 *s3Solver) isRow() bool {
@@ -108,15 +114,18 @@ func (s3 *s3Solver) chooseCollection(cc *cellCollections) {
 
 func (s3 *s3Solver) extendPossValue(c *cell, val value) {
 	if s3.isCol() {
+		s3.working(fmt.Sprintf("Examining column %d", c.ci), 3)
 		if _, ok := s3.ignore[c.ci]; ok {
 			return
 		}
 	} else {
+		s3.working(fmt.Sprintf("Examining row %d", c.ri), 3)
 		if _, ok := s3.ignore[c.ri]; ok {
 			return
 		}
 	}
 
+	s3.working(fmt.Sprintf("Looking at value %s in Cell(%d,%d)", val, c.ri, c.ci), 4)
 	vi := int(val) - 1
 	if c.val == empty && c.possible[vi] {
 		c.parent.working(fmt.Sprintf("Empty Cell(%d,%d), value %s set to not possible", c.ri, c.ci, val), 1)
@@ -124,4 +133,11 @@ func (s3 *s3Solver) extendPossValue(c *cell, val value) {
 		s3.ext++
 	}
 
+}
+
+func (s3 *s3Solver) working(msg string, indent int) {
+	if s3.showWorking {
+		is := strings.Repeat(" -", indent)
+		fmt.Printf("%s%s\n", is, msg)
+	}
 }
