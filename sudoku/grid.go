@@ -6,17 +6,9 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 const gridSize int = 9
-
-type gridDisplay int
-
-const (
-	showValues gridDisplay = iota
-	showPCount
-)
 
 // gridCoord allows us to use the following code:
 //  for ri, rn := range gridCoord
@@ -26,9 +18,8 @@ var gridCoord = [gridSize]int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // Grid is the entire game board
 type Grid struct {
-	cell        [gridSize][gridSize]*cell
-	showWorking bool
-	cc          *cellCollections
+	cell [gridSize][gridSize]*cell
+	cc   *cellCollections
 }
 
 // NewGrid returns a new, empty grid
@@ -46,11 +37,6 @@ func NewGrid() *Grid {
 
 func (g *Grid) returnCell(ri, ci int) *cell {
 	return g.cell[ri][ci]
-}
-
-// ShowWorking sets whether the solver should explain its thinking
-func (g *Grid) ShowWorking(sw bool) {
-	g.showWorking = sw
 }
 
 // Import from specified .sp file
@@ -77,12 +63,7 @@ func (g *Grid) Import(fileName string) error {
 					return fmt.Errorf("Error converting '%s' to value: %v", string(rv), err)
 				}
 				c := g.returnCell(ri, ci)
-				err = c.setValue(value(vr))
-				if err == nil {
-					c.status = cellOriginal
-				} else {
-					return err
-				}
+				c.val = value(vr)
 			}
 			ri++
 		}
@@ -91,12 +72,7 @@ func (g *Grid) Import(fileName string) error {
 }
 
 // Display handles the grid output
-func (g *Grid) Display(displayType ...gridDisplay) {
-	dt := showValues
-	if len(displayType) > 0 {
-		dt = displayType[0]
-	}
-
+func (g *Grid) Display() {
 	for ri := range gridCoord {
 		if ri%3 == 0 {
 			drawHoriz()
@@ -106,31 +82,9 @@ func (g *Grid) Display(displayType ...gridDisplay) {
 				drawVert()
 			}
 			c := g.returnCell(ri, ci)
-			switch dt {
-			case showValues:
-				if g.showWorking {
-					switch c.status {
-					case cellNew:
-						fmt.Printf("<%s>", c.val)
-						c.status = cellSolved
-					case cellSolved:
-						fmt.Printf("-%s-", c.val)
-					default:
-						fmt.Printf(" %s ", c.val)
-					}
-				} else {
-					fmt.Printf(" %s ", c.val)
-				}
-			case showPCount:
-				pc, opv := c.pCount()
-				if pc == 1 {
-					fmt.Printf("<%s>", opv)
-				} else {
-					fmt.Printf(" %d ", pc)
-				}
-			}
+			fmt.Printf(" %s ", c.val)
 		}
-		drawEndofRow()
+		drawEndOfRow()
 	}
 	drawHoriz()
 }
@@ -147,13 +101,6 @@ func (g *Grid) emptyCells() int {
 	return ecc
 }
 
-func (g *Grid) working(msg string, indent int) {
-	if g.showWorking {
-		is := strings.Repeat("  ", indent)
-		fmt.Printf("%s%s\n", is, msg)
-	}
-}
-
 func drawHoriz() {
 	fmt.Println("+---------+---------+---------+")
 }
@@ -162,7 +109,7 @@ func drawVert() {
 	fmt.Print("|")
 }
 
-func drawEndofRow() {
+func drawEndOfRow() {
 	drawVert()
 	fmt.Println()
 }

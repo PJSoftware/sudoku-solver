@@ -11,14 +11,12 @@ import (
 )
 
 type solution struct {
-	file   string
-	passes int
-	grid   *sudoku.Grid
+	file string
+	grid *sudoku.Grid
 }
 
 func main() {
 	puzzle := flag.String("puzzle", "easy", "enter name of predefined puzzle to solve (from puzzles folder)")
-	working := flag.Bool("working", false, "show working while solving puzzle")
 	all := flag.Bool("all", false, "process all available puzzles")
 	flag.Parse()
 
@@ -35,7 +33,6 @@ func main() {
 
 	for _, p := range puzzles {
 		grid := sudoku.NewGrid()
-		grid.ShowWorking(*working)
 
 		fmt.Printf("Solving '%s'\n", p)
 
@@ -49,12 +46,12 @@ func main() {
 			grid.Display()
 		}
 
-		ecc, npr := grid.Solve()
+		ecc := grid.Solve()
 		if ecc == 0 {
 			solved++
-			sl = append(sl, solution{p, npr, nil})
+			sl = append(sl, solution{p, nil})
 		} else {
-			sl = append(sl, solution{p, npr, grid})
+			sl = append(sl, solution{p, grid})
 		}
 
 		if ecc == 0 {
@@ -62,23 +59,20 @@ func main() {
 		} else {
 			fmt.Println("Unable to solve puzzle!")
 		}
-		if np == 1 && !*working {
-			grid.Display()
-		}
+		grid.Display()
 		fmt.Println()
 	}
 
 	for _, sol := range sl {
 		if sol.grid == nil {
-			fmt.Printf("%s solved in %d passes\n", sol.file, sol.passes)
+			fmt.Printf("%s solved recursively\n", sol.file)
 		}
 	}
 	fmt.Printf("%d of %d puzzles solved!\n\n", solved, len(puzzles))
 
 	for _, sol := range sl {
 		if sol.grid != nil {
-			fmt.Printf("%s could not be solved (%d passes)\n", sol.file, sol.passes)
-			sol.grid.ShowWorking(false)
+			fmt.Printf("%s could not be solved recursively\n", sol.file)
 			sol.grid.Display()
 			fmt.Println()
 		}
